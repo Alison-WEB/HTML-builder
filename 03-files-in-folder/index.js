@@ -20,7 +20,7 @@ function getFiles() {
               path.extname(file).slice(1),
               '-',
               parseFloat(stats.size / 1024).toFixed(2),
-              'kb'
+              'KB'
             );
           }
         }
