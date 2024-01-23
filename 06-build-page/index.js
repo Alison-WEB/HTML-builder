@@ -6,11 +6,6 @@ const pathAssets = path.join(__dirname, 'assets');
 const pathProjectDistAccets = path.join(pathProjectDist, 'assets');
 const pathTemplate = path.join(__dirname, 'template.html');
 const pathComponents = path.join(__dirname, 'components');
-const headerPath = path.join(pathComponents, 'header.html');
-const footerPath = path.join(pathComponents, 'footer.html');
-const articlesPath = path.join(pathComponents, 'articles.html');
-// const aboutPath = path.join(pathComponents, 'about.html');
-// console.log(pathTemplate);
 
 function bundlePage() {
   fs.rm(pathProjectDist, { recursive: true, force: true }, function () {
@@ -30,7 +25,7 @@ function bundlePage() {
                 mergedCss,
                 'utf-8')
               .then(() => {
-                console.log('The css merge was successful.');
+                console.log('---\nThe css merge was successful\n---');
               })
               .catch((error) => {
                 console.error('The css merge has failed.', error);
@@ -41,7 +36,7 @@ function bundlePage() {
           });
       });
       copyFilesRecursive(pathAssets, pathProjectDistAccets);
-      insertIntoTemplate();
+      insertTemplates();
     })
   })
 }
@@ -58,7 +53,7 @@ function copyFilesRecursive(sourcePath, destinationPath) {
           fs.promises
             .copyFile(sourceFilePath, destinationFilePath)
             .then(() => {
-              console.log(`File ${file.name} copied successfully.`);
+              console.log(`-File ${file.name} copied successfully.`);
             })
             .catch((err) => {
               console.log(`Error copying file ${file.name}:\n${err}`);
@@ -73,28 +68,57 @@ function copyFilesRecursive(sourcePath, destinationPath) {
   });
 }
 
-function insertIntoTemplate() {
+function insertTemplates() {
   fs.promises.readFile(pathTemplate, 'utf-8').then((templateContent) => {
-    Promise.all([
-      fs.promises.readFile(headerPath, 'utf-8'),
-      fs.promises.readFile(footerPath, 'utf-8'),
-      fs.promises.readFile(articlesPath, 'utf-8')
-    ]).then(([headerContent, footerContent, articlesContent, aboutContent]) => {
-      const updatedTemplate = templateContent
-        .replace('{{header}}', headerContent)
-        .replace('{{footer}}', footerContent)
-        .replace('{{articles}}', articlesContent);
-      fs.promises.writeFile(pathTemplate, updatedTemplate, 'utf-8')
-        .then(() => {
-          console.log('Inserting components into the template was successful');
-        })
-        .catch((error) => {
-          console.error('Error when inserting components into a template.', error);
-        });
-    }).catch((error) => {
-      console.error('Error reading components.', error);
-    });
-  }).catch((error) => {
-    console.error('Error reading components.', error);
-  });
+    fs.promises
+      .readdir(pathComponents, { withFileTypes: true })
+      .then((files) => {
+        const templatePromises = files
+          .filter((file) => file.isFile() && file.name.endsWith('.html'))
+          .map((file) => {
+            const name = path.parse(file.name).name;
+            return fs.promises
+              .readFile(path.join(pathComponents, file.name), 'utf-8')
+              .then((content) => {
+                return { name, content };
+              });
+          });
+        Promise.all(templatePromises)
+          .then((templateContents) => {
+            let updateTemplate = templateContent;
+            templateContents.forEach((template) => {
+              updateTemplate = updateTemplate.replace(
+                `{{${template.name}}}`,
+                template.content
+              );
+            });
+            fs.promises
+              .writeFile(
+                path.join(pathProjectDist, 'index.html'),
+                updateTemplate,
+                'utf-8'
+              )
+              .then(() => {
+                console.log(
+                  '---\nInserting components into the template was successful\n---'
+                );
+              })
+              .catch((error) => {
+                console.error(
+                  'Error when inserting components into a template.', error
+                );
+              });
+          })
+          .catch((error) => {
+            console.error('Error reading components.', error);
+          });
+      })
+      .catch((error) => {
+        console.error('Error reading components.', error);
+      });
+  })
 }
+
+console.log(
+  '! ! !\nPlease check that you wrote {{about}} in template.html in low case\n! ! !'
+);
