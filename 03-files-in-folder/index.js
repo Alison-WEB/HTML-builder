@@ -13,18 +13,31 @@ function getFiles() {
         if (err) {
           console.log(err);
         } else {
-          if (!stats.isDirectory()) {
-            console.log(
-              file,
-              '-',
-              path.extname(file).slice(1),
-              '-',
-              parseFloat(stats.size / 1024).toFixed(2),
-              'KB'
-            );
+          if (stats.isDirectory()) {
+            console.log(file, '- is directory');
+          } else {
+            if (path.extname(file) !== '') {
+              console.log(
+                path.parse(file).name,
+                '-',
+                path.extname(file).slice(1),
+                '-',
+                parseFloat(stats.size / 1024).toFixed(2),
+                'KB'
+              );
+            } else {
+              console.log(
+                '',
+                '-',
+                path.parse(file).name.slice(1),
+                '-',
+                parseFloat(stats.size / 1024).toFixed(2),
+                'KB'
+              );
+            } 
           }
         }
-      })
+      });
     });
   });
 }
